@@ -11,6 +11,16 @@ class __Config:
     __RESPONSE_CHANCE: Optional[float] = None
     __RESPONSE_DELAY: Optional[float] = None
     __ID: Optional[int] = None
+    __two_arguments_example = """{
+    "token": "token-here",
+    "RESPONSE_CHANCE": 0.7,
+    "RESPONSE_DELAY": 0.5,
+    "ID": 1444225324
+}"""
+    __four_arguments_example = """{
+    "token": "token-here",
+    "ID": 1444225324
+}"""
     # резервироавние полей с учетом типизации
 
     def __init__(self) -> None:
@@ -20,6 +30,11 @@ class __Config:
 
         if len(params) == 2:
             if 'token' not in params.keys() or 'ID' not in params.keys():
+                print(
+                    "The correct example of config with two params is",
+                    self.__two_arguments_example,
+                    sep='\n\n'
+                )
                 raise TypeError("Token-key must be in params argument if params key is alone")
             self.__token = params['token']
             self.__ID = params['ID']
@@ -29,6 +44,11 @@ class __Config:
                 'RESPONSE_DELAY' not in params.keys() or
                 'token' not in params.keys() or
                 'ID' not in params.keys()):
+                print(
+                    "The correct example of config with four params is",
+                    self.__four_arguments_example,
+                    sep='\n\n'
+                )
                 raise TypeError("Incorrect keys at params agrument")
             self.__RESPONSE_CHANCE = params['RESPONSE_CHANCE']
             self.__RESPONSE_DELAY = params['RESPONSE_DELAY']
@@ -36,8 +56,11 @@ class __Config:
             self.__ID = params['ID']
 
         # немного проверок на аргументы
-        
         else:
+            print(
+                f"The correct config must be with two or four argements, "
+                f"like \n{self.__two_arguments_example}\nor\n{self.__four_arguments_example}"
+            )
             raise TypeError(f"Must be 2 or 4 keys in config.json, not {len(params.keys())}")
     
     # геттер токена
@@ -55,14 +78,14 @@ class __Config:
     def RESPONSE_CHANCE(self) -> float:
         if self.__RESPONSE_CHANCE is not None:
             return self.__RESPONSE_CHANCE
-        raise TypeError("The RESPONSE_CHANCE property is None")
+        return 1
     
     # и задержки
     @property
     def RESPONSE_DELAY(self) -> float:
         if self.__RESPONSE_DELAY is not None:
             return self.__RESPONSE_DELAY
-        raise TypeError("The RESPONSE_DELAY property is None")
+        return 0.1
     
     # и ID
     @property
