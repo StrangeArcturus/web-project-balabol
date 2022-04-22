@@ -6,6 +6,8 @@ from vk_api.vk_api import VkApiMethod
 from random import randint
 # для случайного id
 # так как так требует api vk
+from time import sleep
+# для задержки перед ответом
 from typing import List, NoReturn, Optional
 # немного подсказок типов
 
@@ -19,7 +21,7 @@ from data.messages import Message
 
 
 inv_message = """
-Всем привет! Я Балабол, я учусь человеческой речи, и для каждого чата
+Привет! Я Балабол, я учусь человеческой речи, и для каждого чата
 "обучен" я буду в зависимости от ваших сообщений)
 А для работы мне нужно выдать доступ к переписке или права администратора.
 Для сброса базы данных этого чата используйте команды /сброс или /reset
@@ -50,12 +52,15 @@ def add_history_to_db(history: List[str]) -> None:
     for message in history:
         msg = Message()
         msg.text = message
+        # db_sess.add(msg) if message in map(lambda _msg: _msg.text, db_sess.query(Message).all()) else ...
         db_sess.add(msg)
         db_sess.commit()
 
 
 def get_and_generate_message_from_db() -> str:
-    messages: List[str] = db_sess.query(Message).all()
+    messages: List[str] = list(map(
+        lambda msg: msg.text, db_sess.query(Message).all()
+    ))
     return get_text_from_history(messages)
 
 
@@ -89,6 +94,8 @@ def main() -> Optional[NoReturn]:
             print('Для меня от:', message['from_id'])
             print('Текст:', message['text'])
             # информирование
+            sleep(config.RESPONSE_DELAY)
+            # сама задержка
             history = vk.messages.getHistory(
                 peer_id=message['peer_id'],
                 count=199
