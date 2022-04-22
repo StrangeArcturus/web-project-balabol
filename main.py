@@ -6,13 +6,16 @@ from vk_api.vk_api import VkApiMethod
 from random import randint
 # для случайного id
 # так как так требует api vk
-from typing import NoReturn, Optional
+from typing import List, NoReturn, Optional
 # немного подсказок типов
 
 from config import config
 # самописный конфиг
 from generate_text import get_text_from_history
 # обёртка над чудо-библиотекой
+from data import db_session
+from data.messages import Message
+# базы данных
 
 
 inv_message = """
@@ -23,20 +26,37 @@ inv_message = """
 """.strip(' ').strip('\n').strip(' ').replace('\n', '. ')
 # сообщение при приглашении
 # временно не будет использоваться
+db_session.global_init("db/messages.db")
+print("база данных успешно подключена")
+db_sess = db_session.create_session()
+# суета с базами данных
 
 
 def send_on_invite(vk: VkApiMethod, peer_id: int) -> None:
     """
     обёртка на приглашение бота в беседу
     :vk `VkApiMethod`
-    :peer__ID `int`
+    :peer_id `int`
     return `None`
     """
     vk.messages.send(
-        peer__ID=peer_id,
+        peer_id=peer_id,
         massage=inv_message,
-        random__ID=randint(0, 2 ** 32)
+        random_id=randint(0, 2 ** 32)
     )
+
+
+def add_history_to_db(history: List[str]) -> None:
+    for message in history:
+        msg = Message()
+        msg.text = message
+        db_sess.add(msg)
+        db_sess.commit()
+
+
+def get_and_generate_message_from_db() -> str:
+    messages: List[str] = db_sess.query(Message).all()
+    return get_text_from_history(messages)
 
 
 def main() -> Optional[NoReturn]:
@@ -70,16 +90,27 @@ def main() -> Optional[NoReturn]:
             print('Текст:', message['text'])
             # информирование
             history = vk.messages.getHistory(
-                peer__ID=message['peer_id'],
+                peer_id=message['peer_id'],
                 count=199
             )['items']
+            history = list(
+                map(
+                    lambda msg: msg["text"],
+                    filter(
+                        lambda msg: msg["from_id"] != -config.ID,
+                        history
+                    )
+                )
+            )
+            add_history_to_db(history)
             # получение истории чата для обучения на лету позже
-            answer = get_text_from_history(list(map(lambda msg: msg['text'], history))[::-1])
+            answer = get_and_generate_message_from_db()
+            print("мой ответ: ", answer)
             # полученный сгенерированный ответ бота
             vk.messages.send(
-                peer__ID=message['peer_id'],
-                message=answer,#"Спасибо, что написали нам. Мы обязательно ответим",
-                random__ID=randint(0, 2 ** 32)
+                peer_id=message['peer_id'],
+                message=answer,
+                random_id=randint(0, 2 ** 32)
             )
 
 
